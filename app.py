@@ -104,7 +104,7 @@ with ui.tags.div(class_="header-bar"):
             @functools.lru_cache(maxsize=1)
             def get_latest_cran_version():
                 try:
-                    resp = requests.get("https://crandb.r-pkg.org/bibliometrix")
+                    resp = requests.get("https://crandb.r-pkg.org/bibliometrix", timeout=3)
                     if resp.status_code == 200:
                         data = resp.json()
                         return data.get("Version", None)
