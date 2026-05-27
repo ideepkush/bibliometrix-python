@@ -9,3 +9,4 @@ Bibenv/
 *.pyc
 .pytest_cache/
 .ipynb_checkpoints/
+out/

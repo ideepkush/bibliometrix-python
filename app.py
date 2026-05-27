@@ -932,6 +932,105 @@ with ui.tags.div(id="mainContent", class_="main-content"):
                         except Exception as e:
                             ui.markdown(f"❌ **API fetch failed:** `{str(e)[:200]}`")
 
+            # ── Standardized CSV Upload ─────────────────────────────────────────
+            ui.hr()
+            ui.h4("📂 Load a Standardized CSV", style="color: #5567BB; margin-top: 1rem;")
+            ui.p(
+                "Re-import a previously exported standardized CSV "
+                "(produced by the ETL pipeline or the CLI tool 'tests/run_etl.py'). "
+                "The file is re-validated against the WoS schema before loading."
+            )
+            ui.input_file(
+                "csv_unified_file",
+                "Upload standardized CSV:",
+                accept=[".csv"],
+                multiple=False,
+            )
+            ui.input_action_button(
+                "csv_unified_run",
+                "Load & Validate",
+                icon=ICONS["data"],
+                class_="btn-success",
+            )
+
+            @render.express()
+            @reactive.event(input.csv_unified_run)
+            def csv_unified_result():
+                file = input.csv_unified_file()
+                if not file:
+                    ui.markdown("⚠️ **Please upload a CSV file first.**")
+                    return
+                with ui.tags.div(style="padding: 16px;"):
+                    try:
+                        from www.services.etl.constants import TARGET_COLUMNS, LIST_FIELDS
+                        from www.services.etl.validation import validate_standardized_df
+                        import pandas as pd
+
+                        uploaded_df = pd.read_csv(file[0]["datapath"])
+
+                        # Convert semicolon-delimited list fields back to lists
+                        for field in LIST_FIELDS:
+                            if field in uploaded_df.columns:
+                                uploaded_df[field] = uploaded_df[field].fillna("").apply(
+                                    lambda v: [item.strip() for item in str(v).split(";") if item.strip()]
+                                    if v else []
+                                )
+                        # Fill string fields
+                        for col in TARGET_COLUMNS:
+                            if col in uploaded_df.columns and col not in LIST_FIELDS:
+                                if col in ("TC", "PY"):
+                                    uploaded_df[col] = pd.to_numeric(uploaded_df[col], errors="coerce").fillna(0).astype(int)
+                                else:
+                                    uploaded_df[col] = uploaded_df[col].fillna("").astype(str)
+
+                        # Check mandatory columns
+                        missing_cols = [c for c in TARGET_COLUMNS if c not in uploaded_df.columns]
+                        present_cols = [c for c in TARGET_COLUMNS if c in uploaded_df.columns]
+
+                        # Render coverage badges
+                        badges_html = ""
+                        for col in TARGET_COLUMNS:
+                            if col in present_cols:
+                                badges_html += (
+                                    f'<span style="background:#d4edda;color:#155724;'
+                                    f'padding:2px 8px;border-radius:12px;font-size:0.75rem;'
+                                    f'margin:2px;display:inline-block;">✓ {col}</span> '
+                                )
+                            else:
+                                badges_html += (
+                                    f'<span style="background:#f8d7da;color:#721c24;'
+                                    f'padding:2px 8px;border-radius:12px;font-size:0.75rem;'
+                                    f'margin:2px;display:inline-block;">✗ {col}</span> '
+                                )
+
+                        ui.markdown(
+                            f"✅ **Loaded {len(uploaded_df)} records** with "
+                            f"{len(present_cols)}/{len(TARGET_COLUMNS)} required columns."
+                        )
+                        ui.h5("Column Coverage:")
+                        ui.HTML(f'<div style="line-height:2;">{badges_html}</div>')
+
+                        # Try strict validation
+                        try:
+                            validate_standardized_df(uploaded_df)
+                            ui.markdown("✅ **Schema validation PASSED** — DataFrame is ready for analysis.")
+                        except Exception as ve:
+                            ui.markdown(f"⚠️ **Validation warning:** {str(ve)[:200]}")
+
+                        # Preview
+                        ui.h5("Preview (first 5 rows):")
+                        preview_cols = [c for c in ["DB","UT","TI","PY","AU","TC"] if c in uploaded_df.columns]
+                        ui.HTML(uploaded_df[preview_cols].head().to_html(classes="table table-sm", index=False))
+
+                        # Push to global reactive
+                        try:
+                            df.set(uploaded_df)
+                        except Exception:
+                            pass
+
+                    except Exception as e:
+                        ui.markdown(f"❌ **CSV load failed:** `{str(e)[:200]}`")
+
         with ui.nav_panel("None", value="collections"):
             ui.h3("🚧 Warning: Merge Collection is under construction 🚧")
 
