@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 from functions.get_table import *
 
 
@@ -12,7 +13,7 @@ def get_filters(df):
     Returns:
         A DataFrame with additional columns for filters and metrics.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Calculate the minimum and maximum publication years
     data["Min_Year"] = data["PY"].min()

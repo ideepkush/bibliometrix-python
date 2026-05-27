@@ -6,6 +6,7 @@ from .networkplot import *
 from .histnetwork import *
 from .metatagextraction import *
 from .tabletag import *
+import pandas as pd
 
 def couplingMap(df, analysis="documents", field="CR", n=500, minfreq=5,
                 ngrams=1, community_repulsion=0.1, impact_measure="local",
@@ -16,8 +17,7 @@ def couplingMap(df, analysis="documents", field="CR", n=500, minfreq=5,
         return None
 
     df = metaTagExtraction(df, "SR") # serve questo per avere il merging perfetto per uniformare la colonna SR
-    M = df.get()
-
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     ngrams = int(ngrams)
     minfreq = max(0, int(minfreq * len(M) // 1000))
 
@@ -436,7 +436,7 @@ def labeling(df, df_lab, term, n, n_labels, analysis, ngrams):
     # Se il termine è TI o AB, estrai termini
     if term in ["TI", "AB"]:
         df = term_extraction(reactive.Value(df), field=term, ngrams=ngrams, verbose=False)
-        df = df.get()
+        df = df if isinstance(df, pd.DataFrame) else df.get()
         term = f"{term}_TM"
 
     # Normalizzazione delle stringhe per evitare errori di merge
@@ -517,7 +517,7 @@ def best_lab(df, tab_global, n_labels, term):
 
 def localCitations(df, fast_search=False, sep=";"):
     df = metaTagExtraction(df, "SR")
-    M = df.get() 
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     M['TC'] = M['TC'].fillna(0)
     if fast_search:
         loccit = M['TC'].quantile(0.75)

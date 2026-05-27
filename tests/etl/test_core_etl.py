@@ -58,7 +58,7 @@ def test_dimensions_xlsx_standardizes_schema(tmp_path: Path) -> None:
     df = convert_to_bibliometrix_df("DIMENSIONS", input_path=str(source_file))
 
     assert list(df.columns) == TARGET_COLUMNS
-    assert df.loc[0, "PY"] == "2023"
+    assert df.loc[0, "PY"] == 2023
     assert df.loc[0, "TC"] == 0
     assert df.loc[0, "AU"] == ["Rossi M.", "Lee K."]
 
@@ -82,7 +82,7 @@ def test_pubmed_file_standardizes_schema(tmp_path: Path) -> None:
     assert list(df.columns) == TARGET_COLUMNS
     assert df.loc[0, "PMID"] == "123"
     assert df.loc[0, "DI"] == "10.1000/test"
-    assert df.loc[0, "PY"] == "2024"
+    assert df.loc[0, "PY"] == 2024
     assert df.loc[0, "AU"] == ["Smith J", "Doe A"]
 
 

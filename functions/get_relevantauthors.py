@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_relevant_authors(df, num_of_authors, frequency="N. of Documents"):
@@ -13,7 +14,7 @@ def get_relevant_authors(df, num_of_authors, frequency="N. of Documents"):
     Returns:
         A Plotly figure object and a DataFrame of the most relevant authors.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Drop rows with missing values
     data = data.dropna(subset=["AU"])
@@ -105,6 +106,9 @@ def get_relevant_authors(df, num_of_authors, frequency="N. of Documents"):
     # Set x-axis ticks to 0, 5, 10, etc.
     max_x = author_counts[frequency].max()
     tick_step = 5
+    # Guard against NaN/empty data (e.g., when source lacks author info)
+    if pd.isna(max_x) or max_x <= 0:
+        max_x = tick_step
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:
         x_ticks.append(int(max_x))

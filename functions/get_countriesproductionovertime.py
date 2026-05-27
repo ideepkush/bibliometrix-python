@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_countries_production_over_time(df, top_k_countries):
@@ -13,7 +14,7 @@ def get_countries_production_over_time(df, top_k_countries):
         A Plotly figure object representing the country's production over time.
     """
     df = metaTagExtraction(df, "AU_CO")
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     AFF = pd.Series(data["AU_CO"]).dropna().apply(lambda x: [aff.strip() for aff in x if aff.strip() != ""])
     nAFF = [len(aff) for aff in AFF]

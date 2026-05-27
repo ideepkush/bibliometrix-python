@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 from functions.get_status import *
 
 
@@ -79,7 +80,7 @@ def get_table(database, df, dpi=300, filter=False, modal=True):
         A DataTable object if data is available, otherwise a message indicating no data.
     """
     # Retrieve the data from the DataFrame
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     table_html = ""
     fig = None

@@ -1,4 +1,5 @@
 from www.services import *
+from typing import List, Dict, Optional, Sequence, Union
 
 
 def get_thematic_evolution(df, field="ID", years=None, n=250, weight_index="inc_index", min_weight_index=0.1, minFreq=2,
@@ -310,7 +311,7 @@ def timeslice(M, breaks=None, k=5):
     Returns:
         dict: Dictionary containing DataFrames for each sub-period.
     """
-    M = M.get()
+    M = M if isinstance(M, pd.DataFrame) else M.get()
 
     # Convert the 'PY' column to numeric
     M['PY'] = pd.to_numeric(M['PY'], errors='coerce')

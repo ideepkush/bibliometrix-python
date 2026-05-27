@@ -2,13 +2,13 @@ from .utils import *
 from .igraph2vis import *
 from .termextraction import *
 from .biblionetwork import *
+import pandas as pd
 
 
 def thematic_map(df, field="ID", n=250, minfreq=5, ngrams=1, stemming=False, size=0.5, n_labels=1, community_repulsion=0.1, repel=True, remove_terms=None, synonyms=None, cluster="walktrap", subgraphs=False):
         # df = metaTagExtraction(df, field=field)
         M = df
-        m = df.get()
-
+        m = df if isinstance(df, pd.DataFrame) else df.get()
         # Set ngrams based on field
         ngrams = int(ngrams) if field in ['TI', 'AB'] else 1
         # Set stemming as boolean
@@ -29,6 +29,9 @@ def thematic_map(df, field="ID", n=250, minfreq=5, ngrams=1, stemming=False, siz
         else:
             raise ValueError("Invalid field specified.")
 
+        # Guard against None or empty NetMatrix (e.g., when data lacks the required field)
+        if NetMatrix is None:
+            return None
         if not NetMatrix.empty:
             Net = network_plot(NetMatrix, normalize="association", Title="Keyword co-occurrences", type="auto",
                        labelsize=n_labels, halo=False, cluster=cluster, remove_isolates=True,
@@ -83,17 +86,15 @@ def thematic_map(df, field="ID", n=250, minfreq=5, ngrams=1, stemming=False, siz
                 .apply(lambda x: pd.Series({
                     'freq': x['sC'].sum(),
                     'cluster_label': x.loc[x['sC'].idxmax(), 'words'],
-                    'sC': list(x['sC']),  # Se necessario mantenere i valori di sC
-                    'words': ', '.join(x['words'].astype(str)),  # <-- Converte in stringa pulita
-                    'color': x['color'].iloc[0]  # Prende il primo valore della colonna
+                    'sC': list(x['sC']),
+                    'words': list(x['words'].astype(str)),  # Keep as list, not joined string
+                    'color': x['color'].iloc[0]
                 }))
                 .reset_index())
 
         # Explode both words and sC columns to create rows for each word and its occurrence count
-        df_lab = df_lab.assign(
-            words=df_lab['words'].str.split(', '),
-            sC=df_lab['sC']  # Keep sC as is since it's already a list
-        ).explode(['words', 'sC']).reset_index(drop=True)
+        # Both are already lists with matching lengths (one element per word)
+        df_lab = df_lab.explode(['words', 'sC']).reset_index(drop=True)
 
         # Convert to upper triangle matrix and create edge dataframe
         index_names = sEij.index
@@ -101,7 +102,7 @@ def thematic_map(df, field="ID", n=250, minfreq=5, ngrams=1, stemming=False, siz
         sEij = triu(sEij.values)
         
         df_lab_top = df_lab[['words', 'groups']].reset_index(drop=True)
-        df_lab_top = df_lab_top.assign(words=df_lab_top['words'].str.split(', ')).explode('words').reset_index(drop=True)
+        # 'words' is already exploded into individual strings, no further split needed
 
         # Create edge list dataframe
         sEij_df = pd.DataFrame(sEij, index=index_names, columns=column_names)

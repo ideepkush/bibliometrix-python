@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_local_cited_sources(df, num_of_cited_sources):
@@ -16,7 +17,7 @@ def get_local_cited_sources(df, num_of_cited_sources):
     # Extract metadata tags for cited sources
     df = metaTagExtraction(df, "CR_SO")
 
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
     
     if isinstance(data["CR_SO"].iloc[0], list):  # Check if the first element is a list
         # Flatten the 'CR_SO' column containing lists
@@ -100,6 +101,12 @@ def get_local_cited_sources(df, num_of_cited_sources):
     # Set x-axis ticks to 0, 50, 100, etc.
     max_x = source_counts["N. of Local Citations"].max()
     tick_step = 50
+
+    # Guard against NaN/empty data
+
+    if pd.isna(max_x) or max_x <= 0:
+
+        max_x = tick_step
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:
         x_ticks.append(int(max_x))

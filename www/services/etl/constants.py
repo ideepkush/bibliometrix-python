@@ -35,7 +35,6 @@ STRING_FIELDS = [
     "TI",
     "SO",
     "JI",
-    "PY",
     "DT",
     "LA",
     "RP",
@@ -47,7 +46,7 @@ STRING_FIELDS = [
     "SR",
 ]
 
-INTEGER_FIELDS = ["TC"]
+INTEGER_FIELDS = ["TC", "PY"]
 
 LIST_FIELDS = ["AU", "AF", "C1", "CR", "DE", "ID"]
 

@@ -1,5 +1,6 @@
 from .utils import *
 from .cocmatrix import *
+import pandas as pd
 
 
 def biblionetwork(M, analysis="coupling", network="authors", n=None, sep=";", short=False, shortlabel=True, remove_terms=None, synonyms=None):
@@ -42,6 +43,9 @@ def biblionetwork(M, analysis="coupling", network="authors", n=None, sep=";", sh
             WA = cocMatrix(M, Field="AB_TM", type="sparse", n=n, sep=sep, short=short, remove_terms=remove_terms, synonyms=synonyms)
         elif network == "sources":
             WA = cocMatrix(M, Field="SO", type="sparse", n=n, sep=sep, short=short)
+        # Guard: cocMatrix returns None when data is empty
+        if WA is None:
+            return None
         NetMatrix = crossprod(WA, WA)
 
     elif analysis == "co-citation":
@@ -60,6 +64,9 @@ def biblionetwork(M, analysis="coupling", network="authors", n=None, sep=";", sh
             WA = cocMatrix(M, Field="AU_UN", type="sparse", n=n, sep=sep, short=short)
         elif network == "countries":
             WA = cocMatrix(M, Field="AU_CO", type="sparse", n=n, sep=sep, short=short)
+        # Guard: cocMatrix may return None for empty data
+        if WA is None:
+            return None
         NetMatrix = crossprod(WA, WA)
 
     # Verifica che NetMatrix non sia None prima di procedere
@@ -71,7 +78,7 @@ def biblionetwork(M, analysis="coupling", network="authors", n=None, sep=";", sh
         filtered_index = [idx for idx in NetMatrix.index if str(idx).strip()]
         NetMatrix = NetMatrix.loc[filtered_index, filtered_columns]
 
-        M = M.get()  # Estrai il dizionario se M è un oggetto
+        M = M if isinstance(M, pd.DataFrame) else M.get()  # Estrai il dizionario se M è un oggetto
 
         db_name = M["DB"].iloc[0]
         print(f"db_name: {db_name}")

@@ -1,4 +1,6 @@
 from www.services import *
+import pandas as pd
+from typing import List, Dict, Optional, Sequence, Union
 
 
 def get_affiliation_production_over_time(df, top_k_affiliations):
@@ -12,13 +14,26 @@ def get_affiliation_production_over_time(df, top_k_affiliations):
     Returns:
         A Plotly figure object representing the affiliation's production over time.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
-    AFF = data["AU_UN"].dropna().apply(lambda x: [aff for aff in x if aff.strip() != ""])
+    # Ensure AU_UN column exists (needed for affiliation analysis on non-WoS sources)
+    if "AU_UN" not in data.columns:
+        data = metaTagExtraction(data, "AU_UN")
+
+    # AU_UN may be a string (semicolon-separated) or a list; handle both
+    def _to_list(x):
+        if isinstance(x, list):
+            return [aff for aff in x if isinstance(aff, str) and aff.strip()]
+        if isinstance(x, str):
+            return [aff.strip() for aff in x.split(";") if aff.strip()]
+        return []
+
+    AFF = data["AU_UN"].dropna().apply(_to_list)
     nAFF = [len(aff) for aff in AFF]
 
     affiliations = [aff for sublist in AFF for aff in sublist]
-    years = data["PY"].repeat(nAFF).values[:len(affiliations)]
+    # Align PY with AFF's index (which is the non-null subset)
+    years = data.loc[AFF.index, "PY"].repeat(nAFF).values[:len(affiliations)]
     AFFY = pd.DataFrame({
         "Affiliation": affiliations,
         "Year": years

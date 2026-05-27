@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_sources_local_impact(df, num_of_sources_local_impact, source_local_impact):
@@ -13,7 +14,7 @@ def get_sources_local_impact(df, num_of_sources_local_impact, source_local_impac
     Returns:
         A Plotly figure object and a DataFrame of the most impactful sources.
     """
-    df = df.get()
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     today = pd.Timestamp.now().year
 
     # Ensure 'TC' and 'PY' are numeric

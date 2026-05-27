@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_frequent_words(df, ngram, num_of_words, word_type, file_upload_terms, file_upload_synonyms, field_separator_frequent=';'):
@@ -100,8 +101,7 @@ def table_tag(df, tag, ngrams=1, remove_terms=None, synonyms=None):
     """
     Extract and count words from a specified field in the DataFrame.
     """
-    M = df.get()
-    
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     # Remove duplicates
     M = M.drop_duplicates(subset='SR')
     

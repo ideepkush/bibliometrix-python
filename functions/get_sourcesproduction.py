@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_sources_production(df, num_of_sources_production, occurences):
@@ -13,10 +14,13 @@ def get_sources_production(df, num_of_sources_production, occurences):
     Returns:
         A Plotly figure object representing the sources' production over time.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Calculate the number of publications per year for each source
     WSO = cocMatrix(df, Field="SO")
+    # Guard against None result from cocMatrix (empty data)
+    if WSO is None or (hasattr(WSO, 'empty') and WSO.empty):
+        return None
     if WSO.shape[1] == 1:
         WSO = pd.DataFrame(WSO, columns=[data["SO"].iloc[0]])
 

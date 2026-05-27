@@ -1,5 +1,6 @@
 from .utils import *
 from .cocmatrix import *
+import pandas as pd
 
 
 def histNetwork(df, min_citations=0, sep=";", network=True):
@@ -19,7 +20,7 @@ def histNetwork(df, min_citations=0, sep=";", network=True):
             - M: A DataFrame containing the metadata of the papers with the Local Citation Score (LCS).
             - LCS: A list containing the Local Citation Score of each paper.
     """
-    M = df.get()
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     db = M['DB'][0]
 
     # Ensure required fields are present
@@ -31,15 +32,26 @@ def histNetwork(df, min_citations=0, sep=";", network=True):
         print("\nYour collection does not contain Cited References metadata (Field CR is missing)\n")
         return None
 
+    # Guard: no citation analysis possible when all CR entries are empty
+    cr_lengths = M['CR'].apply(lambda x: len(x) if isinstance(x, (list, str)) else 0)
+    if cr_lengths.sum() == 0:
+        print("\nYour collection has empty Cited References (CR) — citation analysis not possible\n")
+        return None
+
     # Fill missing values in TC
     M['TC'] = M['TC'].fillna(0)
 
-    if db == "Web_of_Science":
+    # Case-insensitive DB matching to support standardized uppercase tags
+    db_upper = str(db).upper().replace("-", "_").replace(" ", "_")
+    if db_upper in ("WEB_OF_SCIENCE", "WOS", "ISI"):
         results = wos(M, min_citations=min_citations, sep=sep, network=network)
-    elif db == "Scopus":
+    elif db_upper in ("SCOPUS",):
+        results = scopus(M, min_citations=min_citations, sep=sep, network=network)
+    elif db_upper in ("PUBMED", "PUBMED_FILE", "PUBMED_API", "OPENALEX", "DIMENSIONS"):
+        # Use scopus-style processing for non-WoS sources that have CR field
         results = scopus(M, min_citations=min_citations, sep=sep, network=network)
     else:
-        print("\nDatabase not compatible with direct citation analysis\n")
+        print(f"\nDatabase '{db}' not compatible with direct citation analysis\n")
         return None
 
     return results

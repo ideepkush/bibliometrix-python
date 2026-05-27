@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_trend_topics(df, ngram, field_tt, time_window, file_upload_terms_tt, file_upload_synonyms_tt, word_minimum_frequency, number_of_words_year):
@@ -99,8 +100,7 @@ def field_by_year(df, field, timespan, min_freq, n_items, remove_terms=None, syn
     # Create co-occurrence matrix
     A = cocMatrix(df, Field=field, binary=False, remove_terms=remove_terms, synonyms=synonyms)
     n = A.sum(axis=0).to_numpy()  # Convert to 1D array
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Calculate quantiles
     trend_med = pd.DataFrame(A.values).apply(lambda x: pd.Series(np.round(np.quantile(np.repeat(df['PY'], x), [0.25, 0.5, 0.75]))), axis=0).T
     trend_med.columns = ['year_q1', 'year_med', 'year_q3']

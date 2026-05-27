@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_local_cited_authors(df, num_of_cited_authors, fast_search=False):
@@ -20,13 +21,15 @@ def get_local_cited_authors(df, num_of_cited_authors, fast_search=False):
         loccit = 1
 
     df = metaTagExtraction(df, "SR")
-    M = df.get()
-    
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     # Fill missing values
     M['TC'] = M['TC'].fillna(0)
 
     # Create a histogram network
     H = histNetwork(df, min_citations=loccit, sep=";", network=False)
+    # Guard: histNetwork returns None when CR data is unavailable
+    if H is None:
+        return None
     LCS = H['histData']
     M = H['M']
     
@@ -107,6 +110,12 @@ def get_local_cited_authors(df, num_of_cited_authors, fast_search=False):
     # Set x-axis ticks to 0, 5, 10, etc.
     max_x = author_counts[frequency].max()
     tick_step = 5
+
+    # Guard against NaN/empty data
+
+    if pd.isna(max_x) or max_x <= 0:
+
+        max_x = tick_step
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:
         x_ticks.append(int(max_x))

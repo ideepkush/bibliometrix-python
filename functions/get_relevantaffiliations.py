@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_relevant_affiliations(df, num_of_affiliations, disambiguation):
@@ -13,7 +14,7 @@ def get_relevant_affiliations(df, num_of_affiliations, disambiguation):
     Returns:
         A Plotly figure object and a DataFrame of the most relevant authors.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     if disambiguation == "yes":
         # Extract affiliations from the "AU_UN" field

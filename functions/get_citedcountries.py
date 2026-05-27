@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_cited_countries(df, num_of_cited_countries, cited_countries_measure):
@@ -15,8 +16,7 @@ def get_cited_countries(df, num_of_cited_countries, cited_countries_measure):
     """
     # Extract metadata tags for cited countries
     df = metaTagExtraction(df, "AU1_CO")
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Prepare the table for ranking countries
     tab = (
         df.dropna(subset=["AU1_CO"])
@@ -68,8 +68,8 @@ def get_cited_countries(df, num_of_cited_countries, cited_countries_measure):
             y=list(range(n)),
             mode="markers+text",
             marker=dict(
-                size=18 + 6 * (x_values / x_values.max()),
-                color=x_values,
+                size=(18 + 6 * (x_values / (x_values.max() or 1))).fillna(18) if hasattr(x_values, 'fillna') else 18,
+                color=x_values.fillna(0) if hasattr(x_values, 'fillna') else x_values,
                 colorscale=[[0, "#B3D1F2"], [1, "#5567BB"]],
                 line=dict(width=1, color="#E0E0E0"),
                 opacity=0.95,
@@ -100,6 +100,9 @@ def get_cited_countries(df, num_of_cited_countries, cited_countries_measure):
 
     # Set x-axis ticks
     max_x = x_values.max()
+    # Guard against NaN/empty data
+    if pd.isna(max_x) or max_x <= 0:
+        max_x = 5
     tick_step = 5 if max_x <= 50 else int(max_x // 10) or 1
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:

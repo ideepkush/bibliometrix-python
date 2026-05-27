@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_annual_production(df):
@@ -11,7 +12,7 @@ def get_annual_production(df):
     Returns:
         A Plotly figure object representing the annual scientific production.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Calculate the number of publications per year
     publications_per_year = data["PY"].value_counts().sort_index().reset_index()

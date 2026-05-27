@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_main_informations(df, log=False):
@@ -12,7 +13,7 @@ def get_main_informations(df, log=False):
     Returns:
         A DataFrame with additional columns for filters and metrics.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     #### Min and Max Year ####
     start_time = time.time()
@@ -99,7 +100,7 @@ def get_main_informations(df, log=False):
     if "AU_CO" not in data.columns:
         # Extract the required metadata
         df = metaTagExtraction(df, "AU_CO")
-        data = df.get()
+        data = df if isinstance(df, pd.DataFrame) else df.get()
         
     # Calculate "Country_Count" with a vectorized function
     data["Country_Count"] = data["AU_CO"].apply(lambda x: len(set(x)))

@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_references_spectroscopy(df, start_year, end_year=2005, field_separator_spec=';'):
@@ -16,8 +17,7 @@ def get_references_spectroscopy(df, start_year, end_year=2005, field_separator_s
         rpys_table (pd.DataFrame): Table with RPYS data (years, citations, deviation from median, top references).
         cr_table (pd.DataFrame): Table of cited references with local citation counts and Google Scholar links.
     """
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Pulizia e preparazione dei dati
     c_references = df['CR'].apply(lambda x: [i for i in x]).explode()
     c_references = c_references.astype(str).str.replace('DOI;', 'DOI ')
@@ -50,7 +50,10 @@ def get_references_spectroscopy(df, start_year, end_year=2005, field_separator_s
 
     # Aggiunta degli anni mancanti
     year_seq = rpys_table['CitedYear']
-    missing_years = set(range(year_seq.min(), year_seq.max() + 1)) - set(year_seq)
+    # Guard against empty or NaN data
+    if len(year_seq) == 0 or pd.isna(year_seq.min()) or pd.isna(year_seq.max()):
+        return None
+    missing_years = set(range(int(year_seq.min()), int(year_seq.max()) + 1)) - set(year_seq.astype(int))
     missing_years_df = pd.DataFrame({'CitedYear': list(missing_years), 'Citations': [0] * len(missing_years)})
     rpys_table = pd.concat([rpys_table, missing_years_df]).sort_values('CitedYear').reset_index(drop=True)
 

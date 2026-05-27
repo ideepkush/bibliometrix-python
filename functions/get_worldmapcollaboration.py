@@ -5,13 +5,13 @@ import geopandas as gpd
 import networkx as nx
 import plotly.express as px
 import plotly.graph_objects as go
+from typing import List, Dict, Optional, Sequence, Union
 
 def get_world_map_collaboration(df, edges_min=1, edgesize=5):
     # Estrai metadati dai paesi (assumi che tu abbia già AU_CO processato)
     M = df
     df = metaTagExtraction(df, "AU_CO")
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Normalizza e conta le occorrenze dei paesi (come in get_countries_production)
     df["AU_CO"] = df["AU_CO"].apply(lambda x: x if isinstance(x, list) else [x])
     df = df.explode("AU_CO")
@@ -32,6 +32,9 @@ def get_world_map_collaboration(df, edges_min=1, edgesize=5):
 
     # Costruisci matrice di collaborazione
     net = biblionetwork(M, analysis="collaboration", network="countries")
+    # Guard: biblionetwork returns None when data is empty
+    if net is None:
+        return None
     net_df = pd.DataFrame(net)
 
     # Costruisci rete

@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_corresponding_author_countries(df, top_k_countries):
@@ -15,7 +16,7 @@ def get_corresponding_author_countries(df, top_k_countries):
     # Estrai i metadati "AU_CO" e "AU1_CO" e verifica il tipo di dati
     df = metaTagExtraction(df, Field="AU_CO")  # Assumendo che `metaTagExtraction` sia già definita
     df = metaTagExtraction(df, Field="AU1_CO")
-    data = df.get()  # Se `df` è un oggetto reattivo
+    data = df if isinstance(df, pd.DataFrame) else df.get()  # Se `df` è un oggetto reattivo
 
     # Assicurati che le colonne siano di tipo stringa e rimuovi righe con valori mancanti
     data = data.dropna(subset=["AU1_CO", "AU_CO"])

@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_author_production_over_time(df, top_k_authors):
@@ -16,7 +17,7 @@ def get_author_production_over_time(df, top_k_authors):
         table_authors_production (pd.DataFrame): Table summarizing authors' production with TC and TCpY.
         table_documents (pd.DataFrame): Detailed table with additional document information.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Ensure "PY" is numeric
     data["PY"] = pd.to_numeric(data["PY"], errors="coerce")

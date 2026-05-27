@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_cited_documents(df, num_of_cited_docs, cited_docs_measure):
@@ -15,8 +16,7 @@ def get_cited_documents(df, num_of_cited_docs, cited_docs_measure):
     """
     # Extract metadata tags for cited documents
     df = metaTagExtraction(df, "SR")
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Prepare the table for ranking documents
     current_year = pd.to_datetime("today").year
     df["TCperYear"] = df["TC"] / (current_year + 1 - df["PY"])
@@ -74,8 +74,8 @@ def get_cited_documents(df, num_of_cited_docs, cited_docs_measure):
             y=y_vals,
             mode="markers+text",
             marker=dict(
-                size=18 + 6 * (tab[tab.columns[1]] / tab[tab.columns[1]].max()),
-                color=tab[tab.columns[1]],
+                size=(18 + 6 * (tab[tab.columns[1]] / (tab[tab.columns[1]].max() or 1))).fillna(18),
+                color=tab[tab.columns[1]].fillna(0),
                 colorscale=[[0, "#B3D1F2"], [1, "#5567BB"]],
                 line=dict(width=1, color="#E0E0E0"),
                 opacity=0.95,
@@ -106,6 +106,9 @@ def get_cited_documents(df, num_of_cited_docs, cited_docs_measure):
 
     # Set x-axis ticks
     max_x = tab[tab.columns[1]].max()
+    # Guard against NaN/empty data
+    if pd.isna(max_x) or max_x <= 0:
+        max_x = 6
     tick_step = max(1, int(max_x // 6))
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:

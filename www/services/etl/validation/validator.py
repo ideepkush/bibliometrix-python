@@ -37,9 +37,11 @@ def validate_standardized_df(df: pd.DataFrame) -> None:
         if invalid.any():
             raise BibliometrixETLValidationError(f"Column {field} must contain list[str] values")
 
-    invalid_year = df["PY"].map(lambda value: bool(value) and not re.fullmatch(r"\d{4}", value))
+    invalid_year = df["PY"].map(
+        lambda value: not isinstance(value, int) or (value != 0 and not (1800 <= value <= 2100))
+    )
     if invalid_year.any():
-        raise BibliometrixETLValidationError("Column PY must be empty or a four-digit year")
+        raise BibliometrixETLValidationError("Column PY must be 0 or a four-digit year integer (1800-2100)")
 
     empty_db = df["DB"].map(lambda value: not value.strip())
     if empty_db.any():

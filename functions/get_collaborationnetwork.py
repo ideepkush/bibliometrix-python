@@ -1,5 +1,7 @@
 from www.services import *
+import pandas as pd
 import json
+from typing import List, Dict, Optional, Sequence, Union
 
 def get_collaboration_network(
     df, field, network_layout, clustering_algorithm, repulsion, shape, opacity, shadow, curved, colnormalize, labelsize, edgesize, label_cex, nodes, isolates, edges_min
@@ -46,7 +48,7 @@ def get_collaboration_network(
     print("Generating collaboration network...")
 
     M = df
-    m = df.get()
+    m = df if isinstance(df, pd.DataFrame) else df.get()
     NetRefs = None
     Title = ""
 

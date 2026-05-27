@@ -20,7 +20,8 @@ def _surname_from_author(author: str) -> str:
 def _fallback_short_reference(row: pd.Series) -> str:
     authors = normalize_list_field(row.get("AU", []))
     surname = _surname_from_author(authors[0]) if authors else ""
-    year = normalize_string(row.get("PY", ""))
+    py_value = row.get("PY", 0)
+    year = str(py_value) if isinstance(py_value, int) and py_value > 0 else normalize_string(py_value)
     source = normalize_string(row.get("SO", ""))
     parts = [part for part in [surname, year, source] if part]
     return ", ".join(parts)

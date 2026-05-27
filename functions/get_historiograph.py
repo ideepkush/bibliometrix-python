@@ -5,6 +5,7 @@ import pandas as pd
 import networkx as nx
 import os
 from matplotlib.colors import to_rgba
+from typing import List, Dict, Optional, Sequence, Union
 
 def hex_to_rgba(hex_color, alpha):
     if not isinstance(hex_color, str) or not hex_color.startswith("#") or len(hex_color) != 7:
@@ -29,6 +30,9 @@ def get_historiograph(df, node_label="AU1", histNodes=20, hist_isolates=True, hi
     # Pre-elaborazione
     df = metaTagExtraction(df, "SR")
     hist_results = histNetwork(df, min_citations=0, sep=sep, network=True)
+    # Guard: histNetwork returns None when CR data is unavailable
+    if hist_results is None:
+        return None
 
     # 1. Costruzione iniziale del grafo
     hist_plot = histPlot(

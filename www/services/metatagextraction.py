@@ -1,4 +1,5 @@
 from .utils import *
+import pandas as pd
 
 
 def metaTagExtraction(df, Field="AU_CO", sep=";", aff_disamb=False):
@@ -14,8 +15,7 @@ def metaTagExtraction(df, Field="AU_CO", sep=";", aff_disamb=False):
     Returns:
         A DataFrame with the extracted metadata tags.
     """
-    M = df.get()
-
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     if Field == "SR":
         M = SR(M)
 
@@ -41,9 +41,10 @@ def metaTagExtraction(df, Field="AU_CO", sep=";", aff_disamb=False):
             a = ind[ind > -1].index
             M.loc[a, "AU1_UN"] = M.loc[a, "AU1_UN"].str[ind[a] + 2:]
 
-    df.set(M)
-    
-    return df
+    if not isinstance(df, pd.DataFrame):
+        df.set(M)
+        return df
+    return M
 
 
 def SR(M):

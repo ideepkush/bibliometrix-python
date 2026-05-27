@@ -854,8 +854,84 @@ with ui.tags.div(id="mainContent", class_="main-content"):
                 ),
 
         with ui.nav_panel("None", value="API"):
-            ui.h3("🚧 Warning: API is under construction 🚧")
-        
+            ui.h3("🔌 API Data Retrieval", style="color: #5567BB;")
+            ui.p(
+                "Fetch bibliographic data directly from open-access APIs (OpenAlex, PubMed). "
+                "No manual download needed — just enter a query and click 'Fetch'."
+            )
+            with ui.layout_sidebar(fillable=False, fill=False):
+                with ui.sidebar(
+                    bg="#F8F9FA",
+                    open="open",
+                    width="350px",
+                ):
+                    ui.h5("API Query", style="color: #5567BB;")
+                    ui.input_select(
+                        "api_platform",
+                        "Platform:",
+                        {"OPENALEX": "OpenAlex", "PUBMED_API": "PubMed API"},
+                    )
+                    ui.input_text(
+                        "api_query",
+                        "Search Query:",
+                        placeholder="e.g., machine learning",
+                    )
+                    ui.input_numeric(
+                        "api_max_records",
+                        "Max Records:",
+                        value=100,
+                        min=10,
+                        max=10000,
+                    )
+                    ui.input_action_button(
+                        "api_fetch_button",
+                        "Fetch from API",
+                        icon=ICONS["api"],
+                        class_="btn-primary",
+                    )
+                    ui.markdown(
+                        "*The data is retrieved live, standardized into the WoS schema, "
+                        "and made available to all analytical modules.*"
+                    )
+
+                @render.express()
+                @reactive.event(input.api_fetch_button)
+                def api_fetch_result():
+                    query = (input.api_query() or "").strip()
+                    if not query:
+                        ui.markdown("⚠️ **Please enter a search query.**")
+                        return
+                    platform = input.api_platform()
+                    max_records = int(input.api_max_records() or 100)
+                    with ui.tags.div(style="padding: 16px;"):
+                        ui.p(f"⏳ Fetching {max_records} records from {platform} for: '{query}'...")
+                        try:
+                            from www.services.etl import convert_to_bibliometrix_df
+                            api_df = convert_to_bibliometrix_df(
+                                platform, query=query, max_records=max_records
+                            )
+                            ui.markdown(
+                                f"✅ **Successfully retrieved {len(api_df)} records** "
+                                f"from {platform} and standardized into the WoS schema."
+                            )
+                            ui.h5("Preview (first 5 rows):")
+                            ui.HTML(
+                                api_df[["DB", "UT", "TI", "PY", "AU", "TC"]]
+                                .head()
+                                .to_html(classes="table table-sm", index=False)
+                            )
+                            ui.p(
+                                "💡 The data is now ready for analysis. Switch to any "
+                                "analytical module in the sidebar."
+                            )
+                            # Store the API DataFrame in the global df reactive
+                            try:
+                                df.set(api_df)
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            ui.markdown(f"❌ **API fetch failed:** `{str(e)[:200]}`")
+
         with ui.nav_panel("None", value="collections"):
             ui.h3("🚧 Warning: Merge Collection is under construction 🚧")
 

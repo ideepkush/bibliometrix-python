@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_countries_production(df):
@@ -13,8 +14,7 @@ def get_countries_production(df):
     """
     # Assicurati che i metadati siano stati estratti
     df = metaTagExtraction(df, "AU_CO")
-    df = df.get()
-
+    df = df if isinstance(df, pd.DataFrame) else df.get()
     # Conta le occorrenze dei paesi
     df["AU_CO"] = df["AU_CO"].apply(lambda x: x if isinstance(x, list) else [x])
     df = df.explode("AU_CO")

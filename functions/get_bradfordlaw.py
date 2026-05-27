@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_bradford_law(df):
@@ -12,7 +13,7 @@ def get_bradford_law(df):
         A Plotly figure object and a DataFrame of the Bradford's Law zones.
     """
     # Sort data by frequency of occurrence (equivalent to R's sort(table(M$SO), decreasing = TRUE))
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
     source_counts = data["SO"].value_counts()
     
     # Total number of sources
@@ -64,10 +65,12 @@ def get_bradford_law(df):
     ))
 
     # Add the "Core Sources" area with the rectangle
+    # Guard against out-of-bounds index (e.g., when source has few sources)
+    rank_idx = min(a, len(df_bradford) - 1)
     fig.add_shape(
         type="rect",
         x0=0,
-        x1=np.log(df_bradford["Rank"][a]),
+        x1=np.log(df_bradford["Rank"].iloc[rank_idx]),
         y0=0,
         y1=df_bradford["Freq"].max(),
         fillcolor="#B3D1F2",
@@ -78,7 +81,7 @@ def get_bradford_law(df):
 
     # Add the "Core Sources" annotation with smaller font
     fig.add_annotation(
-        x=np.log(df_bradford["Rank"][a]) / 2,
+        x=np.log(df_bradford["Rank"].iloc[rank_idx]) / 2,
         y=df_bradford["Freq"].max() * 0.85,
         text="<b>Core<br>Sources</b>",
         showarrow=False,

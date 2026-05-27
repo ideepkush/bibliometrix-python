@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_local_cited_documents(df, num_of_local_cited_docs, field_separator, fast_search=False):
@@ -14,8 +15,7 @@ def get_local_cited_documents(df, num_of_local_cited_docs, field_separator, fast
         A Plotly figure object and a DataFrame of the most local cited documents.
     """
     df = metaTagExtraction(df, "SR")
-    M = df.get()
-
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     # Determine the local citation threshold
     if fast_search:
         loccit = M['TC'].quantile(0.75)
@@ -27,6 +27,9 @@ def get_local_cited_documents(df, num_of_local_cited_docs, field_separator, fast
 
     # Create a histogram network
     H = histNetwork(df, min_citations=loccit, sep=";", network=False)
+    # Guard: histNetwork returns None when CR data is unavailable
+    if H is None:
+        return None
     LCS = H['histData']
     M = H['M']
     
@@ -114,6 +117,12 @@ def get_local_cited_documents(df, num_of_local_cited_docs, field_separator, fast
     # Set x-axis ticks to 0, 5, 10, etc.
     max_x = df_documents["Local Citations"].max()
     tick_step = 5
+
+    # Guard against NaN/empty data
+
+    if pd.isna(max_x) or max_x <= 0:
+
+        max_x = tick_step
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:
         x_ticks.append(int(max_x))

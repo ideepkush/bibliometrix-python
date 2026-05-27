@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_lotka_law(df):
@@ -14,15 +15,22 @@ def get_lotka_law(df):
     """
     
     # Calculate Lotka's Law
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
     
     # Author Productivity (Lotka's Law)
     authors = pd.Series([author.strip() for sublist in data['AU'] for author in sublist])
+    # Guard: cannot compute Lotka's Law on empty author data
+    if len(authors) == 0:
+        return None
     author_prod = authors.value_counts().reset_index()
     author_prod.columns = ['Author', 'N.Articles']
     author_prod = author_prod.groupby('N.Articles').size().reset_index(name='N.Authors')
     author_prod['Freq'] = author_prod['N.Authors'] / author_prod['N.Authors'].sum()
-    
+
+    # Guard: need at least 2 points to fit a polynomial
+    if len(author_prod) < 2:
+        return None
+
     # Calculate theoretical values
     lotka_law = np.polyfit(np.log10(author_prod['N.Articles']), np.log10(author_prod['Freq']), 1)
     author_prod['Theoretical'] = 10**(lotka_law[1] - 2 * np.log10(author_prod['N.Articles']))

@@ -1,4 +1,5 @@
 from www.services import *
+from typing import List, Dict, Optional, Sequence, Union
 
 
 def get_co_citation(

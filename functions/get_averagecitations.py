@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_average_citations(df):
@@ -11,7 +12,7 @@ def get_average_citations(df):
     Returns:
         A Plotly figure object representing the average citations per year.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
 
     # Calculate the current year
     current_year = pd.Timestamp.now().year + 1

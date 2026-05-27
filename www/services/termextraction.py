@@ -1,4 +1,5 @@
 from .utils import *
+import pandas as pd
 
 
 def term_extraction(df, field="TI", ngrams=1, stemming=False, language="english", remove_numbers=True, remove_terms=None, keep_terms=None, synonyms=None, verbose=False):
@@ -20,8 +21,7 @@ def term_extraction(df, field="TI", ngrams=1, stemming=False, language="english"
     Returns:
         A DataFrame with the extracted terms.
     """
-    M = df.get()
-
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     # Load and update stopwords
     overall_start_time = time.time()
 
@@ -98,6 +98,7 @@ def term_extraction(df, field="TI", ngrams=1, stemming=False, language="english"
         print(terms_df.sum().sort_values(ascending=False).head(25))
 
     # Finalize the output
-    df.set(M)
-
-    return df
+    if not isinstance(df, pd.DataFrame):
+        df.set(M)
+        return df
+    return M

@@ -1,4 +1,5 @@
 from .utils import *
+import pandas as pd
 
 
 def cocMatrix(df, Field="AU", type="sparse", n=None, sep=";", binary=True, short=False, remove_terms=None, synonyms=None):
@@ -19,8 +20,7 @@ def cocMatrix(df, Field="AU", type="sparse", n=None, sep=";", binary=True, short
     Returns:
         A bipartite network matrix with cases corresponding to manuscripts and variables to the objects extracted from the Tag Field.
     """
-    M = df.get()
-
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     if "LABEL" not in M.columns:
         M.index = M["SR"]
         print("Processing field: " + Field + "\n")

@@ -25,10 +25,13 @@ def get_thematic_map(df, field="ID", n=250, minfreq=5, ngrams=1, stemming=False,
         A tuple containing the HTML file name and a DataFrame with the extracted terms.
     """
     
-    map, graph_path, words, clusters, documentToClusters = thematic_map(
+    result = thematic_map(
         df, field=field, n=n, minfreq=minfreq, ngrams=ngrams, stemming=stemming, size=size,
         n_labels=n_labels, community_repulsion=community_repulsion, repel=repel,
         remove_terms=remove_terms, synonyms=synonyms, cluster=cluster, subgraphs=subgraphs
     )
-    
+    # Guard: thematic_map returns None when data lacks the required field
+    if result is None:
+        return None
+    map, graph_path, words, clusters, documentToClusters = result
     return map, graph_path, words, clusters, documentToClusters

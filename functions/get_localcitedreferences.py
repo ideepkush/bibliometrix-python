@@ -1,4 +1,5 @@
 from www.services import *
+import pandas as pd
 
 
 def get_local_cited_refs(df, num_of_cited_refs, field_separator):
@@ -13,7 +14,7 @@ def get_local_cited_refs(df, num_of_cited_refs, field_separator):
     Returns:
         A Plotly figure object and a DataFrame of the most local cited sources.
     """
-    data = df.get()
+    data = df if isinstance(df, pd.DataFrame) else df.get()
     
     if isinstance(data["CR"].iloc[0], list):  # Check if the first element is a list
         # Flatten the 'CR' column containing lists
@@ -96,6 +97,12 @@ def get_local_cited_refs(df, num_of_cited_refs, field_separator):
     # Set x-axis ticks to 0, 5, 10, etc.
     max_x = source_counts["Citations"].max()
     tick_step = 5
+
+    # Guard against NaN/empty data
+
+    if pd.isna(max_x) or max_x <= 0:
+
+        max_x = tick_step
     x_ticks = list(range(0, int(max_x) + tick_step, tick_step))
     if x_ticks[-1] < max_x:
         x_ticks.append(int(max_x))

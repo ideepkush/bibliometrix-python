@@ -1,5 +1,8 @@
 from www.services import *
+import pandas as pd
 from scipy.spatial import ConvexHull, QhullError
+from typing import List, Dict, Optional, Sequence, Union
+import math
 
 def distance_to_y(dist, max_dist, scale_factor):
     norm = math.log1p(dist) / math.log1p(max_dist)
@@ -74,7 +77,7 @@ def get_factorial_analysis(
     # Set ngrams based on word_type
     ngrams = int(ngram) if field in ['TI', 'AB'] else 1
 
-    M = df.get()
+    M = df if isinstance(df, pd.DataFrame) else df.get()
     tab = table_tag(M, field, ngrams)
     
     if len(tab) >= 2:
@@ -135,10 +138,13 @@ def get_factorial_analysis(
             wordCoord["contrib"] = np.array(contrib).flatten()
 
             # Verifica che eigCorr esista prima di accedere
-            if CS["res"] is not None and hasattr(CS["res"], "eigCorr"):
-                xlabel = f"Dim 1 ({CS['res'].eigCorr['perc'][dimX]:.2f}%)"
-                ylabel = f"Dim 2 ({CS['res'].eigCorr['perc'][dimY]:.2f}%)"
-            else:
+            try:
+                if CS["res"] is not None and hasattr(CS["res"], "eigCorr"):
+                    xlabel = f"Dim 1 ({CS['res'].eigCorr['perc'][dimX]:.2f}%)"
+                    ylabel = f"Dim 2 ({CS['res'].eigCorr['perc'][dimY]:.2f}%)"
+                else:
+                    xlabel, ylabel = "Dim 1", "Dim 2"
+            except (KeyError, IndexError, AttributeError):
                 xlabel, ylabel = "Dim 1", "Dim 2"
 
         elif method == "MDS":
@@ -157,7 +163,9 @@ def get_factorial_analysis(
         wordCoord["dotSize"] = wordCoord["dotSize"].replace([np.inf, -np.inf], np.nan)
         wordCoord["dotSize"] = wordCoord["dotSize"].fillna(1)
         wordCoord["dotSize"] = wordCoord["dotSize"].clip(lower=1)
-        thres = sorted(wordCoord["dotSize"], reverse=True)[min(int(topWordPlot), len(wordCoord) - 1)]
+        # Guard against infinity in topWordPlot (default value is np.inf)
+        topWordPlot_int = len(wordCoord) - 1 if np.isinf(topWordPlot) else int(topWordPlot)
+        thres = sorted(wordCoord["dotSize"], reverse=True)[min(topWordPlot_int, len(wordCoord) - 1)]
         wordCoord["labelToPlot"] = np.where(wordCoord["dotSize"] >= thres, wordCoord["label"], "")
 
         # Avoid label overlapping
