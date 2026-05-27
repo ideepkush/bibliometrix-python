@@ -34,11 +34,13 @@ sys.path.insert(0, str(ROOT))
 from www.services.etl import convert2df  # noqa: E402
 from www.services.etl.validation import validate_standardized_df  # noqa: E402
 
-# Default sample files for the --sweep mode
+# Default sample files for the --sweep mode (all 5 file-based sources)
 SWEEP_TARGETS = [
     ("SCOPUS",      ROOT / "sources/Scopus/Scopus.csv"),
     ("DIMENSIONS",  ROOT / "sources/Dimensions/Dimensions.xlsx"),
     ("PUBMED_FILE", ROOT / "sources/PubMed/pubmed-allergicrh-set.txt"),
+    ("COCHRANE",    ROOT / "sources/Cochrane/citation-export.txt"),
+    ("LENS",        ROOT / "sources/Lens/Lens.csv"),
 ]
 
 

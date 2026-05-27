@@ -1,0 +1,56 @@
+name: ETL Pipeline Tests
+
+on:
+  push:
+    branches: [main, codex/etl-standardization]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install ETL dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas openpyxl requests pytest anywidget plotly
+
+      - name: Run ETL core tests
+        run: pytest tests/etl/test_core_etl.py -v
+
+      - name: Run schema compatibility tests
+        run: pytest tests/etl/test_full_compat_matrix.py -v -s
+
+      - name: Test CLI sweep
+        run: python tests/run_etl.py --sweep
+
+      - name: Verify all 7 sources load
+        run: |
+          python -c "
+          from www.services.etl import convert2df
+          sources = [
+              ('SCOPUS',      'sources/Scopus/Scopus.csv'),
+              ('DIMENSIONS',  'sources/Dimensions/Dimensions.xlsx'),
+              ('PUBMED_FILE', 'sources/PubMed/pubmed-allergicrh-set.txt'),
+              ('COCHRANE',    'sources/Cochrane/citation-export.txt'),
+              ('LENS',        'sources/Lens/Lens.csv'),
+          ]
+          for src, path in sources:
+              df = convert2df(src, input_path=path)
+              assert len(df) > 0, f'{src} produced empty DataFrame'
+              assert len(df.columns) == 24, f'{src} schema mismatch'
+              print(f'  OK {src}: {len(df)} records')
+          "
