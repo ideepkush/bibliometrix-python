@@ -20,7 +20,13 @@ def cocMatrix(df, Field="AU", type="sparse", n=None, sep=";", binary=True, short
     Returns:
         A bipartite network matrix with cases corresponding to manuscripts and variables to the objects extracted from the Tag Field.
     """
-    M = df if isinstance(df, pd.DataFrame) else df.get()
+    # Defensive copy: this function reassigns M.index below, which would
+    # otherwise mutate the caller's shared (reactive) DataFrame in place.
+    # Without the copy, setting M.index = M["SR"] leaves the shared df with
+    # an index named "SR" while "SR" is still a column, causing a downstream
+    # "'SR' is both an index level and a column label" crash in other modules
+    # (e.g. get_historiograph) that run on the same df afterwards.
+    M = (df if isinstance(df, pd.DataFrame) else df.get()).copy()
     if "LABEL" not in M.columns:
         M.index = M["SR"]
         print("Processing field: " + Field + "\n")

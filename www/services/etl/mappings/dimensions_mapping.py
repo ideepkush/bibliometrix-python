@@ -8,6 +8,7 @@ DIMENSIONS_MAPPING = {
     "Source title": "SO",
     "Journal": "SO",
     "Publication Year": "PY",
+    "PubYear": "PY",
     "Publication Type": "DT",
     "Times cited": "TC",
     "Times Cited": "TC",

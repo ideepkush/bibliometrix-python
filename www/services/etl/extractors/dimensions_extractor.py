@@ -21,7 +21,16 @@ class DimensionsExcelExtractor(BaseExtractor):
         if not self.input_path.exists():
             raise ExtractionError(f"Dimensions file not found: {self.input_path}")
         try:
-            return pd.read_excel(self.input_path)
+            # Dimensions exports prepend a one-line copyright / "About the data"
+            # banner before the real header row, so the actual column names
+            # (Title, Authors, Publication Year, ...) live on the second row.
+            # Skip that banner; otherwise every column maps to empty values.
+            df = pd.read_excel(self.input_path, skiprows=1)
+            # Be tolerant of exports without the banner: if skipping a row hid
+            # the real header, fall back to a plain read.
+            if not {"Title", "Authors", "Publication Year"}.intersection(df.columns):
+                df = pd.read_excel(self.input_path)
+            return df
         except Exception as exc:
             raise ExtractionError(f"Failed to read Dimensions XLSX: {exc}") from exc
 

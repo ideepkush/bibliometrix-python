@@ -35,13 +35,16 @@ The web application enables scholars to easily access bibliometric analysis feat
 
 ### Data Management
 
-- **Import and convert** data from multiple bibliographic databases:
-  - Web of Science (plaintext, BibTeX, EndNote) - ✅ Fully supported
-  - Scopus (CSV, BibTeX) - 🚧 In progress
-  - PubMed (plaintext export) - 🚧 In progress
-  - Dimensions (Excel, CSV) - 🚧 In progress
-  - Lens.org (CSV) - 🚧 In progress
-  - Cochrane CDSR (plaintext) - 🚧 In progress
+- **Import and convert** data from multiple bibliographic databases via the
+  source-agnostic ETL pipeline (`www/services/etl/`), which standardizes every
+  source into the 24-column Web of Science schema:
+  - Web of Science (plaintext, BibTeX, EndNote) - ✅ Supported
+  - Scopus (CSV) - ✅ Supported (ETL)
+  - Dimensions (Excel) - ✅ Supported (ETL)
+  - PubMed (plaintext export) - ✅ Supported (ETL)
+  - Lens.org (CSV) - ✅ Supported (ETL)
+  - Cochrane CDSR (plaintext) - ✅ Supported (ETL)
+  - OpenAlex / PubMed (live API query) - ✅ Supported (no manual download)
 
 - **Filter data** by various criteria including publication years, languages, document types, citation counts, and Bradford's Law zones
 
@@ -190,14 +193,21 @@ bibliometrix-python/
 
 ### Data Import and Processing
 
-bibliometrix-python supports importing bibliographic data from major scientific databases:
+bibliometrix-python supports importing bibliographic data from major scientific
+databases. A source-agnostic ETL pipeline (`www/services/etl/`) standardizes
+each source into the Web of Science 24-column schema so the analytical functions
+run unchanged:
 
-- **Web of Science**: plaintext (.txt), BibTeX (.bib), EndNote (.ciw) - ✅ Fully supported
-- **Scopus**: CSV (.csv), BibTeX (.bib) - 🚧 In progress
-- **PubMed**: plaintext export - 🚧 In progress
-- **Dimensions**: Excel (.xlsx), CSV (.csv) - 🚧 In progress
-- **Lens.org**: CSV (.csv) - 🚧 In progress
-- **Cochrane**: plaintext (.txt) - 🚧 In progress
+- **Web of Science**: plaintext (.txt), BibTeX (.bib), EndNote (.ciw) - ✅ Supported
+- **Scopus**: CSV (.csv) - ✅ Supported (ETL)
+- **PubMed**: plaintext export (.txt) - ✅ Supported (ETL)
+- **Dimensions**: Excel (.xlsx) - ✅ Supported (ETL)
+- **Lens.org**: CSV (.csv) - ✅ Supported (ETL)
+- **Cochrane**: plaintext (.txt) - ✅ Supported (ETL)
+- **OpenAlex / PubMed**: live API query - ✅ Supported (pagination, retries, caching)
+
+See [TESTING.md](TESTING.md) for how to exercise each source and
+[PROJECT_REPORT.md](PROJECT_REPORT.md) for the ETL architecture.
 
 ### Comprehensive Bibliometric Analysis
 

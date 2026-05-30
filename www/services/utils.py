@@ -57,6 +57,36 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
 from scipy.sparse import lil_matrix, csr_matrix
 from nltk.corpus import stopwords as nltk_stopwords
+
+
+def _ensure_nltk_data() -> None:
+    """Download the NLTK corpora the text-mining functions rely on.
+
+    The codebase uses ``stopwords`` and ``wordnet`` (word frequency, treemap,
+    word cloud, co-occurrence, thematic map, ...) but never downloads them, so
+    on a fresh environment those modules crash with
+    ``LookupError: Resource stopwords not found``. Fetch them once, quietly.
+    """
+    import nltk
+
+    for _res, _path in (
+        ("stopwords", "corpora/stopwords"),
+        ("wordnet", "corpora/wordnet"),
+        ("omw-1.4", "corpora/omw-1.4"),
+        ("punkt", "tokenizers/punkt"),
+        ("punkt_tab", "tokenizers/punkt_tab"),
+    ):
+        try:
+            nltk.data.find(_path)
+        except LookupError:
+            try:
+                nltk.download(_res, quiet=True)
+            except Exception:
+                pass
+
+
+_ensure_nltk_data()
+
 from openpyxl.drawing.image import Image as XLImage
 from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics.pairwise import cosine_similarity

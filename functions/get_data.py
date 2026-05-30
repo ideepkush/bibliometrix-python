@@ -41,14 +41,39 @@ def get_data(input, database, df, reset_callback=None):
                     f"The dataset contains {df.get().shape[0]} rows and {df.get().shape[1]} columns."
                 )
             else:
-                # Process single file (original logic)
+                # Process single file
                 type = file[0]["name"]
-                json = biblio_json(file[0]["datapath"], source, type, author)
-                df.set(pd.read_json(StringIO(json)))
+                datapath = file[0]["datapath"]
+
+                # Route the ETL-supported sources through the source-agnostic
+                # pipeline (convert2df) so importing raw non-WoS data in the
+                # dashboard actually exercises the ETL and standardizes it into
+                # the 24-column WoS schema. Fall back to the legacy parser for
+                # WoS, .bib, .zip, or any format the ETL extractor cannot read.
+                ETL_SOURCES = {
+                    "scopus": "SCOPUS",
+                    "dimensions": "DIMENSIONS",
+                    "pubmed": "PUBMED_FILE",
+                    "lens": "LENS",
+                    "cochrane": "COCHRANE",
+                }
+                used_etl = False
+                if source in ETL_SOURCES and not type.lower().endswith((".zip", ".bib")):
+                    try:
+                        from www.services.etl import convert2df
+                        df.set(convert2df(ETL_SOURCES[source], input_path=datapath))
+                        used_etl = True
+                    except Exception:
+                        used_etl = False  # fall back to the legacy parser below
+
+                if not used_etl:
+                    json = biblio_json(datapath, source, type, author)
+                    df.set(pd.read_json(StringIO(json)))
+
                 # Reset all analysis results when new dataset is loaded
                 if reset_callback:
                     reset_callback()
-                
+
                 if type.endswith(".zip"):
                     text = ui.p(
                         f"{database}'s ZIP archive uploaded and extracted successfully! "
@@ -56,8 +81,10 @@ def get_data(input, database, df, reset_callback=None):
                         f"The dataset contains {df.get().shape[0]} rows and {df.get().shape[1]} columns."
                     )
                 else:
+                    via_etl = " via the source-agnostic ETL pipeline" if used_etl else ""
                     text = ui.p(
-                        f"{database}'s file uploaded successfully! You can now proceed to analyze your data. "
+                        f"{database}'s file uploaded successfully{via_etl}! "
+                        f"You can now proceed to analyze your data. "
                         f"The dataset contains {df.get().shape[0]} rows and {df.get().shape[1]} columns."
                     )
         except Exception as e:

@@ -71,7 +71,19 @@ def wos(M, min_citations, sep, network):
     # Process cited references (CR)
     CR = []
     for i, refs in enumerate(M['CR']):
+        # CR may be a real list, a missing value (NaN float), or a raw
+        # delimited string depending on the source/parser. Normalise to a
+        # list of reference strings; skip records without references instead
+        # of crashing with "'float' object is not iterable".
+        if isinstance(refs, float) or refs is None:
+            refs = []
+        elif isinstance(refs, str):
+            refs = [r.strip() for r in refs.split(sep) if r.strip()]
+        elif not isinstance(refs, (list, tuple)):
+            refs = []
         for ref in refs:
+            if not isinstance(ref, str):
+                continue
             # Extract DOI
             doi = ""
             if 'DOI' in ref:
@@ -142,7 +154,14 @@ def wos(M, min_citations, sep, network):
 
         # Ensure all papers are included as both rows and columns
         WLCR = cocMatrix(reactive.Value(M), Field="LCR", sep=sep)
-        
+
+        # cocMatrix returns None when there are no local cited references at
+        # all (e.g. a small or sparse dataset whose documents do not cite one
+        # another). Fall back to an empty zero self-matrix so the network is
+        # simply empty rather than crashing on WLCR.columns below.
+        if WLCR is None:
+            WLCR = pd.DataFrame(0, index=M.index, columns=M.index)
+
         # Trova le LABEL mancanti
         missing_LABEL = set(M.index) - set(WLCR.columns)
         
@@ -168,8 +187,14 @@ def scopus(M, min_citations=0, sep=";", network=True):
 
     print("\nScopus DB:\nProcessing citations...\n")
 
-    # Process the citations
-    CR = M['CR']
+    # Process the citations. CR may arrive as real lists (from convert2df) or
+    # as semicolon-delimited strings (e.g. when reloaded from a flat CSV/XLSX);
+    # normalise to lists so the explode below never iterates a bare string or a
+    # NaN float.
+    CR = M['CR'].apply(
+        lambda x: x if isinstance(x, list)
+        else ([r.strip() for r in x.split(sep) if r.strip()] if isinstance(x, str) else [])
+    )
     CR = pd.DataFrame({
         'SR_citing': np.repeat(M['SR'], CR.str.len()),
         'ref': [item for sublist in CR for item in sublist]

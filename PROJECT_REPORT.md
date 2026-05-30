@@ -259,6 +259,69 @@ infinity as "all rows".
 ### 8.9 `biblionetwork` / `cocMatrix` None-result propagation
 Added explicit `None` checks before matrix multiplication.
 
+### 8.10 `cocMatrix` in-place mutation of the shared DataFrame
+`cocMatrix` set `M.index = M["SR"]` on the DataFrame it received *by
+reference*. In the dashboard every module reads the same reactive `df.get()`
+object, so after the thematic-map module ran, the shared frame was left with
+an index named `SR` while `SR` was still a column. Any module executed
+afterwards (e.g. `get_historiograph`) then crashed with
+`'SR' is both an index level and a column label, which is ambiguous`. Fixed by
+taking a defensive `.copy()` at function entry so `cocMatrix` no longer
+corrupts its caller's data — this affected **all** databases, including WoS.
+
+### 8.11 `metaTagExtraction` (`SR`) infinite-loop / `chr()` overflow
+The short-reference de-duplication loop appended `-{chr(96 + i)}` to duplicate
+`SR` values until none remained. When a record produced a `NaN` short
+reference (e.g. Lens rows missing both `JI` and `SO`), `NaN + "-a"` stayed
+`NaN`, so those rows could never be made unique. The loop spun ~1.1M times
+until `chr(96 + i)` exceeded the Unicode range and raised
+`chr() arg not in range(0x110000)`. Fixed by filling the missing journal
+field and replacing the loop with a single-pass, vectorized, overflow-proof
+suffixer (`-a`, `-b`, … `-z`, `-aa`, …).
+
+### 8.12 `histNetwork` (`wos` branch) — non-iterable `CR` guard
+The WoS code path iterated each record's cited-reference list with
+`for ref in refs`. When `CR` was missing it was a `NaN` float rather than a
+list, raising `TypeError: 'float' object is not iterable` (reproducible on the
+bundled WoS sample, which has empty-CR rows). Fixed by normalising `CR` to a
+list first — real lists pass through, raw delimited strings are split, and
+`NaN`/`None`/other types become an empty list — so records without references
+are skipped instead of crashing.
+
+### 8.13 `histNetwork` (`wos` branch) — empty local-citation matrix guard
+`WLCR = cocMatrix(..., Field="LCR")` returns `None` when the documents share
+no local cited references (common for small or sparse datasets). The next line
+did `set(WLCR.columns)`, raising `AttributeError: 'NoneType' object has no
+attribute 'columns'`. Added a guard that falls back to an empty zero
+self-matrix, so the historiograph network is simply empty instead of crashing.
+
+### 8.14 `metaTagExtraction` (`AU_CO`) — non-iterable affiliation guard
+Country extraction iterated each record's affiliation list with
+`for c1 in C1.iloc[i]`. When a record had no affiliation, `C1` was a `NaN`
+float, raising `TypeError: 'float' object is not iterable`. This crashed the
+**Main Information** panel and every country-based module (countries
+production, corresponding-author countries, cited countries) on the bundled
+WoS sample. Fixed by treating any non-list affiliation value as empty and
+guarding that each entry is a string before parsing — confirmed live in the
+dashboard (Main Information and Countries Production now render).
+
+### 8.15 `metaTagExtraction` (`SR`) — list/string/NaN author normalization
+The short-reference builder did `[x.strip() for x in l]` over each `AU` value,
+assuming a list. When the data came from a flat file (the sample XLSX, or any
+reloaded CSV) `AU` was a `";"`-delimited **string**, so it iterated single
+characters and produced garbage short references; when `AU` was missing it was
+a `NaN` float and crashed. Normalised `AU` to a list (pass lists through, split
+strings on `;`, map missing to `[]`) so short references — the citation key
+used by the historiograph — are always built from author names.
+
+### 8.16 `histNetwork` (`scopus` branch) — list/string/NaN `CR` normalization
+The Scopus citation path assumed `CR` entries were lists (`CR.str.len()`,
+`for item in sublist`). Reloaded flat data supplies `CR` as a `";"`-delimited
+string (or `NaN`), which broke the explode. Normalised `CR` to lists first,
+mirroring the `wos()` branch (§8.12). With §8.15 this makes the **historiograph
+render in ~1 s on Scopus data** (vs minutes on the heavy WoS branch) —
+confirmed live in the dashboard.
+
 ---
 
 ## 9. Standard Column Glossary — All 24 Columns Present

@@ -48,7 +48,18 @@ def metaTagExtraction(df, Field="AU_CO", sep=";", aff_disamb=False):
 
 
 def SR(M):
-    listAU = M["AU"].apply(lambda l: [x.strip() for x in l])
+    # AU may be a real list (from convert2df) or a ";"-delimited string (when
+    # the data was reloaded from a flat CSV/XLSX, e.g. the sample file), or a
+    # NaN float when missing. Normalise to a list of author names so the short
+    # reference is built from authors — not from individual characters — and
+    # never crashes with "'float' object is not iterable".
+    def _au_list(l):
+        if isinstance(l, list):
+            return [str(x).strip() for x in l]
+        if isinstance(l, str):
+            return [a.strip() for a in l.split(";") if a.strip()]
+        return []
+    listAU = M["AU"].apply(_au_list)
     if M["DB"].iloc[0].lower() == "scopus":
         listAU = listAU.apply(lambda l: [x.replace(" ", ",").replace(",,", ",").replace(" ", "") for x in l])
     FirstAuthors = listAU.apply(lambda l: l[0] if len(l) > 0 else "NA").str.replace(",", " ")
@@ -56,20 +67,36 @@ def SR(M):
     no_art = M["JI"] == ""
     M.loc[no_art, "JI"] = M.loc[no_art, "SO"]
     J9 = M["JI"].str.replace(".", " ", regex=False).str.strip()
+    # The journal abbreviation can still be missing for some records (e.g.
+    # Lens rows lacking both JI and SO). Fill it so the short reference never
+    # becomes NaN: a NaN SR cannot be made unique by the de-duplication below
+    # (NaN + "-a" stays NaN), which would loop until chr(96 + i) overflows and
+    # raised "chr() arg not in range(0x110000)".
+    J9 = J9.fillna("NA")
     SR = FirstAuthors + ", " + M["PY"].astype(str) + ", " + J9
+    SR = SR.fillna("NA")
 
     M["SR_FULL"] = SR.str.replace(r"\s+", " ", regex=True)
 
-    st = i = 0
-    while st == 0:
-        ind = SR.duplicated()
-        if ind.any():
-            i += 1
-            SR[ind] = SR[ind] + "-" + chr(96 + i)
-        else:
-            st = 1
+    # Disambiguate duplicate short references deterministically in a single
+    # vectorized pass. The first occurrence keeps the base SR; later duplicates
+    # receive a "-a", "-b", ... "-z", "-aa", ... suffix. This replaces an older
+    # incremental loop ( SR[dup] += "-" + chr(96 + i) ) that never terminated
+    # on NaN/empty values and eventually overflowed chr().
+    def _dup_suffix(n: int) -> str:
+        if n <= 0:
+            return ""
+        s = ""
+        while n > 0:
+            n -= 1
+            s = chr(97 + (n % 26)) + s
+            n //= 26
+        return "-" + s
+
+    dup_rank = SR.groupby(SR).cumcount()
+    SR = SR + dup_rank.map(_dup_suffix)
     M["SR"] = SR.str.replace(r"\s+", " ", regex=True)
-    
+
     return M
 
 
@@ -118,8 +145,15 @@ def AU_CO(M, log=False):
     results = []
     for i in range(len(M)):
         countries_found = []
-        for c1 in C1.iloc[i]:
-            if pd.notna(c1):
+        # Affiliations may be missing (a NaN float) rather than a list, e.g.
+        # on records without a C1/RP address. Treat anything that is not a
+        # list/tuple as "no affiliations" instead of crashing with
+        # "'float' object is not iterable".
+        c1_value = C1.iloc[i]
+        if not isinstance(c1_value, (list, tuple)):
+            c1_value = []
+        for c1 in c1_value:
+            if isinstance(c1, str) and pd.notna(c1):
                 ind = [c.upper() for c in countries if re.search(r'\b' + re.escape(c.upper()) + r'\b', c1.split(",")[-1].strip().upper())]
                 countries_found.extend(ind)
         results.append(countries_found)
