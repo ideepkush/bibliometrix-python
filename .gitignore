@@ -10,3 +10,6 @@ Bibenv/
 .pytest_cache/
 .ipynb_checkpoints/
 out/
+
+# Local Claude preview/launch config (not part of the project)
+.claude/
