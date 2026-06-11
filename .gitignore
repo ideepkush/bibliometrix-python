@@ -1,12 +1,8 @@
 __pycache__/
-bibliovenv/
-Bibenv/
 .idea/
 .venv/
 .venv312/
-.DS_Store
 **/.DS_Store
-*.pyc
 .pytest_cache/
 .ipynb_checkpoints/
 out/
