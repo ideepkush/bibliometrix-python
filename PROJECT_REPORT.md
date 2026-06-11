@@ -1,8 +1,14 @@
 # Bibliometrix-Python — Source-Agnostic ETL Pipeline
 
-**Author:** Deepak Kushwaha
-**Course:** Data Science — Academic Year 2025/2026
+**Course:** Data Science — Academic Year 2025/2026  
 **Professor:** Vincenzo Moscato
+
+| Name | Matricola |
+|------|-----------|
+| Deepak Kushwaha | D03000258 |
+| Subhadip Maity | D03000291 |
+| Vedant Gajanan Pawar | D03000257 |
+| Vishal Kumar | D03000263 |
 
 ---
 
